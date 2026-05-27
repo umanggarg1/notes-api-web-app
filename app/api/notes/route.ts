@@ -2,35 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNoteSchema } from "@/app/validators/note.validator";
 
-import { verifyToken } from "@/lib/auth";
 
 export async function GET(req : NextRequest) {
-  const authHeader = req.headers.get("Authorization");
-
-  if(!authHeader){
-    return NextResponse.json({
-      message: "Unauthorized"
-    }, {
-      status: 401
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
   
-    const decoded = verifyToken(token) as { userId: string; } ;
-
-    if(!decoded){
-      return NextResponse.json({
-        message: "Invalid token"
-      }, {
-        status: 401
-      });
-    }
+    const userId = req.headers.get("X-User-Id");
 
 
     const notes = await prisma.note.findMany({
       where: {
-        userId : decoded.userId,
+        userId : userId!,
       },
       orderBy: {
         createdAt: "desc",
@@ -43,43 +23,11 @@ export async function GET(req : NextRequest) {
 }
 
 
-export async function POST(req: Request) {
-
-  const authHeader =
-    req.headers.get("authorization");
-
-  if (!authHeader) {
-    return NextResponse.json(
-      {
-        message: "Unauthorized",
-      },
-      {
-        status: 401,
-      }
-    );
-  }
-
-  const token =
-    authHeader.split(" ")[1];
-
-  const decoded =
-    verifyToken(token) as {
-      userId: string;
-    };
-
-  if (!decoded) {
-    return NextResponse.json(
-      {
-        message: "Invalid token",
-      },
-      {
-        status: 401,
-      }
-    );
-  }
+export async function POST(req: NextRequest) {
 
   try {
 
+    const userId = req.headers.get("X-User-Id");
     const body = await req.json();
 
     const validatedData =
@@ -90,7 +38,7 @@ export async function POST(req: Request) {
         data: {
           title: validatedData.title,
           content: validatedData.content,
-          userId: decoded.userId,
+          userId: userId!,
         },
       });
 
